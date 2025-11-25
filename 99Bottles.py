@@ -6,6 +6,9 @@ def secondVerse(count, bottleTense):
     secondVerse = "Take one down and pass it around, %s %s of beer on the wall!\n" % (count, bottleTense)
     print(secondVerse)
 
+def doNothing():
+    print("Do nothing")
+
 def lyrics():
     count = 99
     bottleTense = "bottles"
