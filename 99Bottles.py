@@ -12,6 +12,9 @@ def doNothing():
 def doNothing2():
     print("Do nothing2")
 
+def doNothing3():
+    print("Do nothing3")
+
 def lyrics():
     count = 99
     bottleTense = "bottles"
