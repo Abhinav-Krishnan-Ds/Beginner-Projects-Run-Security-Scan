@@ -1,0 +1,84 @@
+name: Snyk SCA and SBOM Scan
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      # Add other branches as needed
+
+jobs:
+  snyk-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (if needed for your project)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          # Adjust based on your project requirements
+
+      # Install Snyk CLI
+      - name: Install Snyk CLI
+        run: |
+          npm install -g snyk
+
+      # Authenticate with Snyk
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Run SCA (Software Composition Analysis) scan
+      - name: Run Snyk SCA Test
+        run: |
+          snyk test --json --json-file-output=sca-results.json || true
+        continue-on-error: true
+
+      # Generate SBOM (Software Bill of Materials)
+      - name: Generate Snyk SBOM
+        run: |
+          snyk sbom --format=cyclonedx1.4+json --json-file-output=sbom-results.json || true
+        continue-on-error: true
+
+      # Upload SCA results to API endpoint
+      - name: Send SCA Results to API
+        if: always()
+        run: |
+          if [ -f sca-results.json ]; then
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.SCA_API_TOKEN }}" \
+              -d @sca-results.json \
+              ${{ secrets.SCA_API_ENDPOINT }}
+          else
+            echo "SCA results file not found"
+          fi
+
+      # Upload SBOM results to API endpoint
+      - name: Send SBOM Results to API
+        if: always()
+        run: |
+          if [ -f sbom-results.json ]; then
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.SBOM_API_TOKEN }}" \
+              -d @sbom-results.json \
+              ${{ secrets.SBOM_API_ENDPOINT }}
+          else
+            echo "SBOM results file not found"
+          fi
+
+      # Optional: Upload artifacts for debugging
+      - name: Upload scan results as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-scan-results
+          path: |
+            sca-results.json
+            sbom-results.json
+          retention-days: 30
