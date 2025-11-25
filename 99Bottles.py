@@ -9,6 +9,9 @@ def secondVerse(count, bottleTense):
 def doNothing():
     print("Do nothing")
 
+def doNothing2():
+    print("Do nothing2")
+
 def lyrics():
     count = 99
     bottleTense = "bottles"
